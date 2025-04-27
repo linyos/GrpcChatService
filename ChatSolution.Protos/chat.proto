@@ -9,9 +9,9 @@ service ChatService {
 }
 
 message ChatMessage {
-	string user = 1; // �ϥΪ̦W��
-	string message = 2; // �T�����e
-	int64 timestamp = 3; // �T���ɶ��W�O
+	string user = 1; // 使用者
+	string message = 2; // 訊息
+	int64 timestamp = 3; // 時間
 }
 
 

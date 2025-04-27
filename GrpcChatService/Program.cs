@@ -1,6 +1,17 @@
 using GrpcChatService.Services;
+using Serilog;
+
+// 新增LOG
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .WriteTo.Console()
+    .WriteTo.File("logs/log.txt", rollingInterval: RollingInterval.Day)
+    .CreateLogger();
 
 var builder = WebApplication.CreateBuilder(args);
+// 使用 Serilog 取代內建 Logger
+
+builder.Host.UseSerilog();
 
 // Add services to the container.
 builder.Services.AddGrpc();
