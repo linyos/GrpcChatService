@@ -1,8 +1,4 @@
-using Grpc.Core;
-using GrpcChatService;
-using Chat;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
+
 namespace GrpcChatService.Services
 {
     public class GreeterService : ChatService.ChatServiceBase
