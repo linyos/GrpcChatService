@@ -1,4 +1,187 @@
 ﻿@page "/home"
+@using System.Threading.Tasks
 
-<h1>首頁</h1>
-<p>歡迎來到 Chat Admin 應用程式！</p>
+<link href="css/home.css" rel="stylesheet" />
+
+<PageTitle>首頁 - gRPC 聊天服務管理</PageTitle>
+
+<div class="dashboard-container">
+    <div class="welcome-section">
+        <div class="welcome-header">
+            <h1>歡迎回來，管理員~~~！</h1>
+            <p class="welcome-subtitle">gRPC 聊天管理控制台</p>
+        </div>
+        <div class="welcome-stats">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">@_activeUsers</div>
+                    <div class="stat-label">線上用戶</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="bi bi-chat-dots-fill"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">@_totalMessages</div>
+                    <div class="stat-label">今日訊息</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-value">@_systemAlerts</div>
+                    <div class="stat-label">系統提醒</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="grid-item activity-chart">            <div class="card-header">
+                <h2>系統活動</h2>
+                <div class="period-selector">
+                    <button class="@(_activePeriod == "day" ? "active" : "")" @onclick="@(() => ChangePeriod("day"))">日</button>
+                    <button class="@(_activePeriod == "week" ? "active" : "")" @onclick="@(() => ChangePeriod("week"))">週</button>
+                    <button class="@(_activePeriod == "month" ? "active" : "")" @onclick="@(() => ChangePeriod("month"))">月</button>
+                </div>
+            </div>
+            <div class="chart-container">
+                <div class="chart-placeholder">
+                    <i class="bi bi-bar-chart-line"></i>
+                    <p>活動圖表將在此顯示</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-item recent-logs">
+            <h2>最近日誌</h2>
+            <div class="logs-list">
+                @foreach (var log in _recentLogs)
+                {
+                    <div class="log-item @log.Type.ToLower()">
+                        <span class="log-time">@log.Time.ToString("HH:mm:ss")</span>
+                        <span class="log-type">@log.Type</span>
+                        <span class="log-message">@log.Message</span>
+                    </div>
+                }
+            </div>
+            <div class="view-all">
+                <a href="/logs">查看所有日誌 <i class="bi bi-arrow-right"></i></a>
+            </div>
+        </div>
+
+        <div class="grid-item quick-actions">
+            <h2>快速動作</h2>
+            <div class="action-buttons">
+                <button class="action-btn" @onclick="OpenChatRoom">
+                    <i class="bi bi-chat-square-text"></i>
+                    <span>開啟聊天室</span>
+                </button>
+                <button class="action-btn" @onclick="ManageUsers">
+                    <i class="bi bi-people"></i>
+                    <span>管理用戶</span>
+                </button>
+                <button class="action-btn" @onclick="CheckSystemStatus">
+                    <i class="bi bi-clipboard-check"></i>
+                    <span>系統狀態</span>
+                </button>
+                <button class="action-btn" @onclick="ViewSettings">
+                    <i class="bi bi-gear"></i>
+                    <span>系統設定</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="grid-item system-health">
+            <h2>系統健康狀態</h2>
+            <div class="health-metrics">
+                <div class="metric">
+                    <div class="metric-label">CPU 使用率</div>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: @_cpuUsage%">
+                            <span>@_cpuUsage%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">記憶體使用率</div>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: @_memoryUsage%">
+                            <span>@_memoryUsage%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">磁碟空間</div>
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: @_diskUsage%">
+                            <span>@_diskUsage%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private int _activeUsers = 27;
+    private int _totalMessages = 1842;
+    private int _systemAlerts = 3;
+    private string _activePeriod = "week";
+    private int _cpuUsage = 42;
+    private int _memoryUsage = 67;
+    private int _diskUsage = 55;
+
+    private List<LogEntry> _recentLogs = new List<LogEntry>();
+
+    protected override void OnInitialized()
+    {
+        // 模擬加載日誌數據
+        _recentLogs = new List<LogEntry>
+        {
+            new LogEntry { Time = DateTime.Now.AddMinutes(-5), Type = "INFO", Message = "用戶 'user123' 已登入系統" },
+            new LogEntry { Time = DateTime.Now.AddMinutes(-12), Type = "WARNING", Message = "訊息傳送重試次數過多" },
+            new LogEntry { Time = DateTime.Now.AddMinutes(-25), Type = "INFO", Message = "系統設定已更新" },
+            new LogEntry { Time = DateTime.Now.AddMinutes(-42), Type = "ERROR", Message = "無法連接到資料庫服務" },
+            new LogEntry { Time = DateTime.Now.AddMinutes(-55), Type = "INFO", Message = "執行系統例行維護" }
+        };
+    }
+
+    private void ChangePeriod(string period)
+    {
+        _activePeriod = period;
+        // 這裡可以加載不同時期的數據
+    }
+
+    private void OpenChatRoom()
+    {
+        // 導航到聊天室頁面
+    }
+
+    private void ManageUsers()
+    {
+        // 導航到用戶管理頁面
+    }
+
+    private void CheckSystemStatus()
+    {
+        // 顯示系統狀態對話框或導航到系統狀態頁面
+    }
+
+    private void ViewSettings()
+    {
+        // 導航到設定頁面
+    }    public class LogEntry
+    {
+        public DateTime Time { get; set; }
+        public required string Type { get; set; }
+        public required string Message { get; set; }
+    }
+}

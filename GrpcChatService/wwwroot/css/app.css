@@ -1,7 +1,12 @@
 @import url('bootstrap/dist/css/bootstrap.min.css');
+@import url('https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap');
+@import url('navmenu.css');
+@import url('home.css');
+@import url('app-core.css');
 
 html, body {
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-family: 'Noto Sans TC', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
 h1:focus {
@@ -70,7 +75,7 @@ a, .btn-link {
 }
 
 .sidebar {
-    background-image: linear-gradient(180deg, rgb(5, 39, 103) 0%, #3a0647 70%);
+    background-image: linear-gradient(180deg, #1e3a8a 0%, #2563eb 100%);
 }
 
 @media (min-width: 641px) {

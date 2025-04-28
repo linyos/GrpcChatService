@@ -7,7 +7,23 @@
 
     <main>
         <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+            <div class="top-row-actions">
+                <div class="search-box">
+                    <i class="bi bi-search"></i>
+                    <input type="text" placeholder="搜尋..." />
+                </div>
+                <div class="action-buttons">
+                    <button class="action-button" title="通知">
+                        <i class="bi bi-bell-fill"></i>
+                    </button>
+                    <button class="action-button" title="設定">
+                        <i class="bi bi-gear"></i>
+                    </button>
+                    <button class="action-button" title="幫助">
+                        <i class="bi bi-question-circle"></i>
+                    </button>
+                </div>
+            </div>
         </div>
 
         <article class="content px-4">
@@ -17,7 +33,7 @@
 </div>
 
 <div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
+    發生了未處理的錯誤。
+    <a href="." class="reload">重新整理</a>
     <span class="dismiss">🗙</span>
 </div>
