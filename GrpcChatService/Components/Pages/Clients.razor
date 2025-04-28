@@ -1,0 +1,24 @@
+@using System
+@using GrpcChatService.Services
+@page "/clients"
+@inject ChatState State
+@implements IDisposable
+
+<h3>在線用戶</h3>
+<ul>
+  @foreach (var user in State.Clients.Keys)
+  {
+    <li>@user</li>
+  }
+</ul>
+
+@code {
+    protected override void OnInitialized()
+    {
+      State.OnChange += StateHasChanged;
+    }
+    public void Dispose()
+    {
+      State.OnChange -= StateHasChanged;
+    }
+}

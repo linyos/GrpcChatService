@@ -1,22 +1,24 @@
-@page "/"
-@namespace GrpcChatService.Components.Pages
-@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
-@{
-    Layout = null;
-}
-
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Chat Admin</title>
-    <base href="~\/" />
+    <base href="/" />
     <link href="css/app.css" rel="stylesheet" />
     <link href="GrpcChatService.styles.css" rel="stylesheet" />
 </head>
 <body>
-    <component type="typeof(GrpcChatService.Components.App)" render-mode="ServerPrerendered" />
+    <div id="app">
+        正在載入...
+    </div>
+
+    <div id="blazor-error-ui">
+        發生未預期的錯誤。
+        <a href="" class="reload">重新載入</a>
+        <a class="dismiss">🗙</a>
+    </div>
+    
     <script src="_framework/blazor.server.js"></script>
 </body>
 </html>
