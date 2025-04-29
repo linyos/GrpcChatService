@@ -11,12 +11,16 @@ string userName = Console.ReadLine() ?? "Anonymous";
 
 // 建立 gRPC 通道
 // 注意：這裡的 URL 需要與 gRPC 服務端一致
-var handler = new SocketsHttpHandler
+// var handler = new SocketsHttpHandler
+// {
+//     EnableMultipleHttp2Connections = true,
+//     ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+// };
+var handler = new HttpClientHandler
 {
-    EnableMultipleHttp2Connections = true
+    ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
 };
-
-var channel = GrpcChannel.ForAddress("http://localhost:5093", new GrpcChannelOptions
+var channel = GrpcChannel.ForAddress("https://localhost:5093", new GrpcChannelOptions
 {
     HttpHandler = handler
 });

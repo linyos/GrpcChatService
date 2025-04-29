@@ -16,24 +16,17 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSingleton<ChatState>();
 
-builder.WebHost.UseKestrel(options =>
-{
-    options.ListenLocalhost(5093, o =>
+
+//伺服器端允許 HTTP/2 明文
+builder.WebHost.ConfigureKestrel(options =>
+{   
+    // HTTP/2 with TLS
+    options.ListenLocalhost(5093, o => 
     {
-        o.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http1AndHttp2;
-        // 不要加 o.UseHttps();
+        o.UseHttps(); // 啟用 HTTPS
+        o.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http2;
     });
 });
-
-// builder.WebHost.UseKestrel(options =>
-// {
-//     options.ListenLocalhost(5093, o =>
-//     {
-//         o.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http1AndHttp2;
-        
-//     });
-// });
-
 
 var app = builder.Build();
 
