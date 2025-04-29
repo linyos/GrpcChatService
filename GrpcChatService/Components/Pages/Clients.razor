@@ -1,5 +1,6 @@
 @using System
 @using GrpcChatService.Services
+@using GrpcChatService.Model
 @page "/clients"
 @inject ChatState State
 @implements IDisposable
@@ -382,16 +383,4 @@
         bannedUsers--;
     }
 
-    // 用戶模型
-    private class UserModel
-    {
-        public string Id { get; set; } = "";
-        public string Name { get; set; } = "";
-        public string Email { get; set; } = "";
-        public string AvatarUrl { get; set; } = "";
-        public string Role { get; set; } = "";
-        public DateTime RegisterDate { get; set; }
-        public bool IsOnline { get; set; }
-        public bool IsBanned { get; set; }
-    }
 }

@@ -1,5 +1,5 @@
 @page "/logs"
-
+@using GrpcChatService.Model
 <PageTitle>系統日誌 - gRPC 聊天管理系統</PageTitle>
 
 <div class="container-fluid">
@@ -362,14 +362,6 @@
         logs.Remove(log);
     }
 
-    // 日誌項目類
-    private class LogEntry
-    {
-        public int Id { get; set; }
-        public DateTime Timestamp { get; set; }
-        public string Level { get; set; } = "";
-        public string Message { get; set; } = "";
-        public string Source { get; set; } = "";
-        public string Details { get; set; } = "";
-    }
+  
+    
 }
