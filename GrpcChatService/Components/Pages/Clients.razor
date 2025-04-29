@@ -4,21 +4,394 @@
 @inject ChatState State
 @implements IDisposable
 
-<h3>在線用戶</h3>
-<ul>
-  @foreach (var user in State.Clients.Keys)
-  {
-    <li>@user</li>
-  }
-</ul>
+<PageTitle>用戶管理 - gRPC 聊天管理系統</PageTitle>
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h1 class="fw-bold">用戶管理</h1>
+                <div class="d-flex gap-2">
+                    <div class="input-group" style="width: 300px;">
+                        <input type="text" class="form-control" placeholder="搜尋用戶..." @bind="searchQuery" @bind:event="oninput" />
+                        <button class="btn btn-outline-secondary" type="button">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                    <button class="btn btn-primary" @onclick="ShowAddUserModal">
+                        <i class="bi bi-person-plus me-1"></i> 新增用戶
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12 col-md-6 col-lg-3 mb-3">
+            <div class="card border-0 h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-circle p-3 me-3" style="background-color: rgba(52, 152, 219, 0.1);">
+                        <i class="bi bi-people text-primary fs-4"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1">總用戶數</h6>
+                        <h3 class="fw-bold">@(allUsers.Count)</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-3 mb-3">
+            <div class="card border-0 h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-circle p-3 me-3" style="background-color: rgba(46, 204, 113, 0.1);">
+                        <i class="bi bi-person-check text-success fs-4"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1">在線用戶</h6>
+                        <h3 class="fw-bold">@(State.Clients.Count)</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-3 mb-3">
+            <div class="card border-0 h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-circle p-3 me-3" style="background-color: rgba(155, 89, 182, 0.1);">
+                        <i class="bi bi-person-plus text-purple fs-4"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1">本月新增</h6>
+                        <h3 class="fw-bold">12</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-3 mb-3">
+            <div class="card border-0 h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-circle p-3 me-3" style="background-color: rgba(231, 76, 60, 0.1);">
+                        <i class="bi bi-person-x text-danger fs-4"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1">被禁用戶</h6>
+                        <h3 class="fw-bold">@bannedUsers</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0">
+                <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                    <ul class="nav nav-tabs card-header-tabs">
+                        <li class="nav-item">
+                            <button class="nav-link @(currentTab == "all" ? "active" : "")" @onclick="@(() => ChangeTab("all"))">所有用戶</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link @(currentTab == "online" ? "active" : "")" @onclick="@(() => ChangeTab("online"))">在線用戶</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link @(currentTab == "banned" ? "active" : "")" @onclick="@(() => ChangeTab("banned"))">已禁用</button>
+                        </li>
+                    </ul>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-gear me-1"></i>批次操作
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-envelope me-2"></i>發送通知</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-download me-2"></i>導出資料</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-trash me-2"></i>批次刪除</a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 40px;">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="selectAll" />
+                                        </div>
+                                    </th>
+                                    <th>用戶資訊</th>
+                                    <th>角色</th>
+                                    <th>註冊時間</th>
+                                    <th>狀態</th>
+                                    <th style="width: 150px;">動作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var user in FilteredUsers)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" />
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="position-relative me-3">
+                                                    <img src="@user.AvatarUrl" class="rounded-circle" width="40" height="40" alt="@user.Name" />
+                                                    @if (user.IsOnline)
+                                                    {
+                                                        <span class="position-absolute bottom-0 end-0 badge rounded-pill bg-success" style="width: 8px; height: 8px; padding: 0;"></span>
+                                                    }
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0">@user.Name</h6>
+                                                    <small class="text-muted">@user.Email</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-@GetRoleBadgeClass(user.Role)">@user.Role</span>
+                                        </td>
+                                        <td>
+                                            @user.RegisterDate.ToString("yyyy-MM-dd")
+                                        </td>
+                                        <td>
+                                            @if (user.IsOnline)
+                                            {
+                                                <span class="badge bg-success">線上</span>
+                                            }
+                                            else if (user.IsBanned)
+                                            {
+                                                <span class="badge bg-danger">已禁用</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">離線</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <button class="btn btn-sm btn-outline-primary" @onclick="@(() => ViewUserDetail(user))">
+                                                    <i class="bi bi-info-circle"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => EditUser(user))">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                @if (user.IsBanned)
+                                                {
+                                                    <button class="btn btn-sm btn-outline-success" @onclick="@(() => UnbanUser(user))">
+                                                        <i class="bi bi-unlock"></i>
+                                                    </button>
+                                                }
+                                                else
+                                                {
+                                                    <button class="btn btn-sm btn-outline-danger" @onclick="@(() => BanUser(user))">
+                                                        <i class="bi bi-ban"></i>
+                                                    </button>
+                                                }
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card-footer bg-transparent">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            顯示 <b>@FilteredUsers.Count()</b> 筆，共 <b>@(allUsers.Count)</b> 筆
+                        </div>
+                        <nav>
+                            <ul class="pagination pagination-sm mb-0">
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#"><i class="bi bi-chevron-left"></i></a>
+                                </li>
+                                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#"><i class="bi bi-chevron-right"></i></a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 @code {
+    private string searchQuery = "";
+    private string currentTab = "all";
+    private int bannedUsers = 3;
+
+    // 模擬用戶資料
+    private List<UserModel> allUsers = new List<UserModel>();
+
     protected override void OnInitialized()
     {
-      State.OnChange += StateHasChanged;
+        State.OnChange += StateHasChanged;
+        
+        // 初始化模擬資料
+        allUsers = new List<UserModel>
+        {
+            new UserModel
+            {
+                Id = "user1",
+                Name = "張小明",
+                Email = "zhang@example.com",
+                AvatarUrl = "https://randomuser.me/api/portraits/men/32.jpg",
+                Role = "一般用戶",
+                RegisterDate = DateTime.Now.AddMonths(-6),
+                IsOnline = true,
+                IsBanned = false
+            },
+            new UserModel
+            {
+                Id = "user2",
+                Name = "王小花",
+                Email = "wang@example.com",
+                AvatarUrl = "https://randomuser.me/api/portraits/women/44.jpg",
+                Role = "VIP用戶",
+                RegisterDate = DateTime.Now.AddMonths(-3),
+                IsOnline = false,
+                IsBanned = false
+            },
+            new UserModel
+            {
+                Id = "user3",
+                Name = "李大雄",
+                Email = "li@example.com",
+                AvatarUrl = "https://randomuser.me/api/portraits/men/62.jpg",
+                Role = "一般用戶",
+                RegisterDate = DateTime.Now.AddMonths(-8),
+                IsOnline = false,
+                IsBanned = true
+            },
+            new UserModel
+            {
+                Id = "user4",
+                Name = "陳小華",
+                Email = "chen@example.com",
+                AvatarUrl = "https://randomuser.me/api/portraits/women/28.jpg",
+                Role = "管理員",
+                RegisterDate = DateTime.Now.AddMonths(-12),
+                IsOnline = true,
+                IsBanned = false
+            },
+            new UserModel
+            {
+                Id = "user5",
+                Name = "林小美",
+                Email = "lin@example.com",
+                AvatarUrl = "https://randomuser.me/api/portraits/women/17.jpg",
+                Role = "VIP用戶",
+                RegisterDate = DateTime.Now.AddDays(-15),
+                IsOnline = true,
+                IsBanned = false
+            }
+        };
+
+        // 將 State.Clients 中的在線用戶標記為在線
+        foreach (var client in State.Clients.Keys)
+        {
+            var user = allUsers.FirstOrDefault(u => u.Name == client);
+            if (user != null)
+            {
+                user.IsOnline = true;
+            }
+        }
     }
+
     public void Dispose()
     {
-      State.OnChange -= StateHasChanged;
+        State.OnChange -= StateHasChanged;
+    }
+
+    private IEnumerable<UserModel> FilteredUsers
+    {
+        get
+        {
+            var users = allUsers.AsEnumerable();
+            
+            // 根據Tab過濾
+            if (currentTab == "online")
+            {
+                users = users.Where(u => u.IsOnline);
+            }
+            else if (currentTab == "banned")
+            {
+                users = users.Where(u => u.IsBanned);
+            }
+            
+            // 根據搜尋查詢過濾
+            if (!string.IsNullOrWhiteSpace(searchQuery))
+            {
+                users = users.Where(u => 
+                    u.Name.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) || 
+                    u.Email.Contains(searchQuery, StringComparison.OrdinalIgnoreCase));
+            }
+            
+            return users;
+        }
+    }
+
+    private void ChangeTab(string tab)
+    {
+        currentTab = tab;
+    }
+
+    private string GetRoleBadgeClass(string role)
+    {
+        return role switch
+        {
+            "管理員" => "primary",
+            "VIP用戶" => "warning",
+            _ => "info"
+        };
+    }
+
+    private void ShowAddUserModal()
+    {
+        // 顯示新增用戶的模態窗口
+    }
+
+    private void ViewUserDetail(UserModel user)
+    {
+        // 查看用戶詳情
+    }
+
+    private void EditUser(UserModel user)
+    {
+        // 編輯用戶
+    }
+
+    private void BanUser(UserModel user)
+    {
+        user.IsBanned = true;
+        bannedUsers++;
+    }
+
+    private void UnbanUser(UserModel user)
+    {
+        user.IsBanned = false;
+        bannedUsers--;
+    }
+
+    // 用戶模型
+    private class UserModel
+    {
+        public string Id { get; set; } = "";
+        public string Name { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string AvatarUrl { get; set; } = "";
+        public string Role { get; set; } = "";
+        public DateTime RegisterDate { get; set; }
+        public bool IsOnline { get; set; }
+        public bool IsBanned { get; set; }
     }
 }

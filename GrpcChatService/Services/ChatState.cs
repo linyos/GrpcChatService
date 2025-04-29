@@ -7,6 +7,6 @@ public class ChatState
     public ConcurrentDictionary<string, IServerStreamWriter<ChatMessage>> Clients { get; }
       = new ConcurrentDictionary<string, IServerStreamWriter<ChatMessage>>();
 
-    public event Action OnChange;
+    public event Action? OnChange;
     public void NotifyStateChanged() => OnChange?.Invoke();
 }

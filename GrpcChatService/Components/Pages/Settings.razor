@@ -1,0 +1,595 @@
+@page "/settings"
+
+<PageTitle>系統設定 - gRPC 聊天管理系統</PageTitle>
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h1 class="fw-bold">系統設定</h1>
+                <div>
+                    <button class="btn btn-primary" @onclick="SaveSettings">
+                        <i class="bi bi-save me-1"></i>儲存設定
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12 col-lg-3 mb-4">
+            <div class="card border-0">
+                <div class="card-header bg-transparent">
+                    <h5 class="mb-0">設定分類</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <button type="button" class="list-group-item list-group-item-action @(activeTab == "general" ? "active" : "")" @onclick="@(() => SetActiveTab("general"))">
+                        <i class="bi bi-gear me-2"></i>一般設定
+                    </button>
+                    <button type="button" class="list-group-item list-group-item-action @(activeTab == "chatSystem" ? "active" : "")" @onclick="@(() => SetActiveTab("chatSystem"))">
+                        <i class="bi bi-chat-dots me-2"></i>聊天系統
+                    </button>
+                    <button type="button" class="list-group-item list-group-item-action @(activeTab == "security" ? "active" : "")" @onclick="@(() => SetActiveTab("security"))">
+                        <i class="bi bi-shield-lock me-2"></i>安全設定
+                    </button>
+                    <button type="button" class="list-group-item list-group-item-action @(activeTab == "notification" ? "active" : "")" @onclick="@(() => SetActiveTab("notification"))">
+                        <i class="bi bi-bell me-2"></i>通知設定
+                    </button>
+                    <button type="button" class="list-group-item list-group-item-action @(activeTab == "backup" ? "active" : "")" @onclick="@(() => SetActiveTab("backup"))">
+                        <i class="bi bi-archive me-2"></i>備份與還原
+                    </button>
+                    <button type="button" class="list-group-item list-group-item-action @(activeTab == "about" ? "active" : "")" @onclick="@(() => SetActiveTab("about"))">
+                        <i class="bi bi-info-circle me-2"></i>關於系統
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-9">
+            <div class="card border-0">
+                <div class="card-body">
+                    @if (activeTab == "general")
+                    {
+                        <div class="settings-section">
+                            <h4 class="section-title mb-4">一般設定</h4>
+                            
+                            <div class="mb-4">
+                                <label for="systemName" class="form-label">系統名稱</label>
+                                <input type="text" class="form-control" id="systemName" @bind="settings.SystemName" />
+                                <div class="form-text">設定系統顯示名稱</div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="siteLanguage" class="form-label">網站語言</label>
+                                <select class="form-select" id="siteLanguage" @bind="settings.Language">
+                                    <option value="zh-TW">繁體中文</option>
+                                    <option value="en-US">English (US)</option>
+                                    <option value="zh-CN">简体中文</option>
+                                    <option value="ja-JP">日本語</option>
+                                </select>
+                                <div class="form-text">選擇系統介面語言</div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="timezone" class="form-label">時區設定</label>
+                                <select class="form-select" id="timezone" @bind="settings.Timezone">
+                                    <option value="Asia/Taipei">(GMT+8:00) 台北</option>
+                                    <option value="Asia/Shanghai">(GMT+8:00) 北京</option>
+                                    <option value="Asia/Tokyo">(GMT+9:00) 東京</option>
+                                    <option value="America/New_York">(GMT-5:00) 紐約</option>
+                                    <option value="Europe/London">(GMT+0:00) 倫敦</option>
+                                </select>
+                                <div class="form-text">選擇系統顯示時間的時區</div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="darkMode" @bind="settings.DarkMode" />
+                                    <label class="form-check-label" for="darkMode">深色模式</label>
+                                </div>
+                                <div class="form-text">啟用深色模式以降低眼睛疲勞</div>
+                            </div>
+                        </div>
+                    }
+                    else if (activeTab == "chatSystem")
+                    {
+                        <div class="settings-section">
+                            <h4 class="section-title mb-4">聊天系統設定</h4>
+                            
+                            <div class="mb-4">
+                                <label for="maxConcurrentChats" class="form-label">最大並行聊天數</label>
+                                <input type="number" class="form-control" id="maxConcurrentChats" @bind="chatSettings.MaxConcurrentChats" />
+                                <div class="form-text">設定每個客服可以同時處理的最大聊天數量</div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="chatTimeout" class="form-label">聊天超時時間（分鐘）</label>
+                                <input type="number" class="form-control" id="chatTimeout" @bind="chatSettings.ChatTimeoutMinutes" />
+                                <div class="form-text">設定聊天無活動後自動關閉的時間</div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="greetingMessage" class="form-label">自動歡迎訊息</label>
+                                <textarea class="form-control" id="greetingMessage" rows="3" @bind="chatSettings.GreetingMessage"></textarea>
+                                <div class="form-text">設定新聊天開始時自動發送的歡迎訊息</div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="enableFileSharing" @bind="chatSettings.EnableFileSharing" />
+                                    <label class="form-check-label" for="enableFileSharing">啟用檔案分享</label>
+                                </div>
+                                <div class="form-text">允許使用者在聊天中分享檔案</div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="maxFileSize" class="form-label">最大檔案大小 (MB)</label>
+                                <input type="number" class="form-control" id="maxFileSize" @bind="chatSettings.MaxFileSizeMB" />
+                                <div class="form-text">設定允許上傳的最大檔案大小</div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="enableHistory" @bind="chatSettings.EnableChatHistory" />
+                                    <label class="form-check-label" for="enableHistory">保存聊天歷史</label>
+                                </div>
+                                <div class="form-text">保存使用者的聊天歷史記錄</div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="historyDays" class="form-label">保存天數</label>
+                                <input type="number" class="form-control" id="historyDays" @bind="chatSettings.ChatHistoryDays" />
+                                <div class="form-text">設定聊天歷史記錄保存的天數</div>
+                            </div>
+                        </div>
+                    }
+                    else if (activeTab == "security")
+                    {
+                        <div class="settings-section">
+                            <h4 class="section-title mb-4">安全設定</h4>
+                            
+                            <div class="mb-4">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="enable2FA" @bind="securitySettings.Enable2FA" />
+                                    <label class="form-check-label" for="enable2FA">啟用二次驗證</label>
+                                </div>
+                                <div class="form-text">要求管理員登入時使用二次驗證</div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="forceHttps" @bind="securitySettings.ForceHttps" />
+                                    <label class="form-check-label" for="forceHttps">強制使用HTTPS</label>
+                                </div>
+                                <div class="form-text">強制使用加密連接</div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="sessionTimeout" class="form-label">工作階段超時（分鐘）</label>
+                                <input type="number" class="form-control" id="sessionTimeout" @bind="securitySettings.SessionTimeoutMinutes" />
+                                <div class="form-text">設定無操作後自動登出的時間</div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="passwordPolicy" class="form-label">密碼政策</label>
+                                <select class="form-select" id="passwordPolicy" @bind="securitySettings.PasswordPolicy">
+                                    <option value="simple">簡單 (最少6個字元)</option>
+                                    <option value="medium">中等 (最少8個字元，包含字母和數字)</option>
+                                    <option value="strong">強 (最少10個字元，包含大小寫字母、數字和特殊字元)</option>
+                                </select>
+                                <div class="form-text">設定密碼強度要求</div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="loginAttempts" class="form-label">最大登入嘗試次數</label>
+                                <input type="number" class="form-control" id="loginAttempts" @bind="securitySettings.MaxLoginAttempts" />
+                                <div class="form-text">超過此次數將鎖定帳戶</div>
+                            </div>
+                            
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                修改安全設定可能會影響系統存取，請確保變更不會導致您被鎖定。
+                            </div>
+                        </div>
+                    }
+                    else if (activeTab == "notification")
+                    {
+                        <div class="settings-section">
+                            <h4 class="section-title mb-4">通知設定</h4>
+                            
+                            <div class="mb-4">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="enableNotifications" @bind="notificationSettings.EnableNotifications" />
+                                    <label class="form-check-label" for="enableNotifications">啟用系統通知</label>
+                                </div>
+                                <div class="form-text">啟用桌面通知</div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="enableSound" @bind="notificationSettings.EnableSound" />
+                                    <label class="form-check-label" for="enableSound">啟用聲音通知</label>
+                                </div>
+                                <div class="form-text">新訊息時播放聲音提示</div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="enableEmail" @bind="notificationSettings.EnableEmailNotifications" />
+                                    <label class="form-check-label" for="enableEmail">啟用郵件通知</label>
+                                </div>
+                                <div class="form-text">重要事件發生時發送電子郵件通知</div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="emailSettings" class="form-label">郵件服務設定</label>
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <input type="text" class="form-control" placeholder="SMTP 伺服器" @bind="notificationSettings.SmtpServer" />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <input type="number" class="form-control" placeholder="連接埠" @bind="notificationSettings.SmtpPort" />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <select class="form-select" @bind="notificationSettings.SmtpSecurity">
+                                            <option value="none">無加密</option>
+                                            <option value="tls">TLS</option>
+                                            <option value="ssl">SSL</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row g-2 mt-2">
+                                    <div class="col-md-6">
+                                        <input type="text" class="form-control" placeholder="郵件帳號" @bind="notificationSettings.SmtpUsername" />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <input type="password" class="form-control" placeholder="郵件密碼" @bind="notificationSettings.SmtpPassword" />
+                                    </div>
+                                </div>
+                                <div class="form-text">設定用於發送通知的郵件伺服器資訊</div>
+                            </div>
+                            
+                            <button class="btn btn-outline-primary" @onclick="TestEmailSettings">
+                                <i class="bi bi-envelope me-1"></i>測試郵件設定
+                            </button>
+                        </div>
+                    }
+                    else if (activeTab == "backup")
+                    {
+                        <div class="settings-section">
+                            <h4 class="section-title mb-4">備份與還原</h4>
+                            
+                            <div class="mb-4">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="enableAutoBackup" @bind="backupSettings.EnableAutoBackup" />
+                                    <label class="form-check-label" for="enableAutoBackup">啟用自動備份</label>
+                                </div>
+                                <div class="form-text">定期自動備份系統資料</div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="backupSchedule" class="form-label">備份頻率</label>
+                                <select class="form-select" id="backupSchedule" @bind="backupSettings.BackupFrequency">
+                                    <option value="daily">每日</option>
+                                    <option value="weekly">每週</option>
+                                    <option value="monthly">每月</option>
+                                </select>
+                                <div class="form-text">設定自動備份的頻率</div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="backupPath" class="form-label">備份路徑</label>
+                                <input type="text" class="form-control" id="backupPath" @bind="backupSettings.BackupPath" />
+                                <div class="form-text">設定備份檔案的儲存位置</div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="backupRetention" class="form-label">備份保留期限（天）</label>
+                                <input type="number" class="form-control" id="backupRetention" @bind="backupSettings.RetentionDays" />
+                                <div class="form-text">設定自動刪除超過指定天數的備份檔案</div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <div class="d-flex gap-2 align-items-center">
+                                    <button class="btn btn-primary" @onclick="CreateBackup">
+                                        <i class="bi bi-download me-1"></i>立即備份
+                                    </button>
+                                    <div class="input-group" style="max-width: 400px;">
+                                        <input type="file" class="form-control" id="restoreFile" />
+                                        <button class="btn btn-outline-secondary" type="button" @onclick="RestoreBackup">
+                                            <i class="bi bi-upload me-1"></i>還原
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="card mt-4">
+                                <div class="card-header bg-transparent">
+                                    <h6 class="mb-0">最近備份記錄</h6>
+                                </div>
+                                <div class="list-group list-group-flush">
+                                    @foreach (var backup in backupHistory)
+                                    {
+                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <i class="bi bi-file-earmark-zip me-2"></i>
+                                                <span>@backup.FileName</span>
+                                                <small class="text-muted ms-2">(@FormatFileSize(backup.Size))</small>
+                                            </div>
+                                            <div>
+                                                <small class="text-muted me-3">@backup.Date.ToString("yyyy-MM-dd HH:mm")</small>
+                                                <div class="btn-group btn-group-sm">
+                                                    <button class="btn btn-outline-primary">
+                                                        <i class="bi bi-download"></i>
+                                                    </button>
+                                                    <button class="btn btn-outline-danger">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else if (activeTab == "about")
+                    {
+                        <div class="settings-section">
+                            <h4 class="section-title mb-4">關於系統</h4>
+                            
+                            <div class="card mb-4">
+                                <div class="card-body">
+                                    <h5 class="fw-bold mb-3">gRPC 聊天管理系統</h5>
+                                    <p class="mb-1">版本：1.0.0</p>
+                                    <p class="mb-3">構建日期：2025-04-20</p>
+                                    <hr />
+                                    <p class="mb-1">授權：商業授權</p>
+                                    <p class="mb-0">授權給：範例公司</p>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <h5>系統資訊</h5>
+                                <table class="table">
+                                    <tbody>
+                                        <tr>
+                                            <th style="width: 200px;">作業系統</th>
+                                            <td>Windows Server 2022</td>
+                                        </tr>
+                                        <tr>
+                                            <th>.NET 版本</th>
+                                            <td>9.0.0</td>
+                                        </tr>
+                                        <tr>
+                                            <th>資料庫</th>
+                                            <td>Microsoft SQL Server 2022</td>
+                                        </tr>
+                                        <tr>
+                                            <th>主機名稱</th>
+                                            <td>CHAT-SERVER-01</td>
+                                        </tr>
+                                        <tr>
+                                            <th>上線時間</th>
+                                            <td>5 天 7 小時 32 分鐘</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <button class="btn btn-primary" @onclick="CheckForUpdates">
+                                    <i class="bi bi-cloud-download me-1"></i>檢查更新
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .settings-section {
+        margin-bottom: 1.5rem;
+    }
+    .section-title {
+        color: #333;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
+        border-bottom: 1px solid #eee;
+    }
+    .list-group-item.active {
+        background-color: rgba(52, 152, 219, 0.1);
+        color: #3498db;
+        border-color: rgba(0,0,0,0.125);
+    }
+</style>
+
+@code {
+    private string activeTab = "general";
+
+    // 一般設定
+    private GeneralSettings settings = new GeneralSettings
+    {
+        SystemName = "gRPC 聊天管理系統",
+        Language = "zh-TW",
+        Timezone = "Asia/Taipei",
+        DarkMode = false
+    };
+
+    // 聊天系統設定
+    private ChatSystemSettings chatSettings = new ChatSystemSettings
+    {
+        MaxConcurrentChats = 5,
+        ChatTimeoutMinutes = 30,
+        GreetingMessage = "您好，很高興為您服務，請問有什麼可以幫到您？",
+        EnableFileSharing = true,
+        MaxFileSizeMB = 10,
+        EnableChatHistory = true,
+        ChatHistoryDays = 90
+    };
+
+    // 安全設定
+    private SecuritySettings securitySettings = new SecuritySettings
+    {
+        Enable2FA = true,
+        ForceHttps = true,
+        SessionTimeoutMinutes = 60,
+        PasswordPolicy = "medium",
+        MaxLoginAttempts = 5
+    };
+
+    // 通知設定
+    private NotificationSettings notificationSettings = new NotificationSettings
+    {
+        EnableNotifications = true,
+        EnableSound = true,
+        EnableEmailNotifications = false,
+        SmtpServer = "smtp.example.com",
+        SmtpPort = 587,
+        SmtpSecurity = "tls",
+        SmtpUsername = "notifications@example.com",
+        SmtpPassword = ""
+    };
+
+    // 備份設定
+    private BackupSettings backupSettings = new BackupSettings
+    {
+        EnableAutoBackup = true,
+        BackupFrequency = "daily",
+        BackupPath = "D:\\Backups",
+        RetentionDays = 30
+    };
+
+    // 備份歷史記錄
+    private List<BackupRecord> backupHistory = new List<BackupRecord>
+    {
+        new BackupRecord
+        {
+            FileName = "backup_20250429_081500.zip",
+            Date = DateTime.Now.AddDays(-1),
+            Size = 15400000
+        },
+        new BackupRecord
+        {
+            FileName = "backup_20250428_081500.zip",
+            Date = DateTime.Now.AddDays(-2),
+            Size = 15200000
+        },
+        new BackupRecord
+        {
+            FileName = "backup_20250427_081500.zip",
+            Date = DateTime.Now.AddDays(-3),
+            Size = 15100000
+        }
+    };
+
+    private void SetActiveTab(string tab)
+    {
+        activeTab = tab;
+    }
+
+    private void SaveSettings()
+    {
+        // 儲存設定
+    }
+
+    private void TestEmailSettings()
+    {
+        // 測試郵件設定
+    }
+
+    private void CreateBackup()
+    {
+        // 建立備份
+        var newBackup = new BackupRecord
+        {
+            FileName = $"backup_{DateTime.Now:yyyyMMdd_HHmmss}.zip",
+            Date = DateTime.Now,
+            Size = 15600000
+        };
+        
+        backupHistory.Insert(0, newBackup);
+    }
+
+    private void RestoreBackup()
+    {
+        // 還原備份
+    }
+
+    private void CheckForUpdates()
+    {
+        // 檢查更新
+    }
+
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB", "TB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len /= 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
+    }
+
+    // 設定模型類
+    private class GeneralSettings
+    {
+        public string SystemName { get; set; } = "";
+        public string Language { get; set; } = "";
+        public string Timezone { get; set; } = "";
+        public bool DarkMode { get; set; }
+    }
+
+    private class ChatSystemSettings
+    {
+        public int MaxConcurrentChats { get; set; }
+        public int ChatTimeoutMinutes { get; set; }
+        public string GreetingMessage { get; set; } = "";
+        public bool EnableFileSharing { get; set; }
+        public int MaxFileSizeMB { get; set; }
+        public bool EnableChatHistory { get; set; }
+        public int ChatHistoryDays { get; set; }
+    }
+
+    private class SecuritySettings
+    {
+        public bool Enable2FA { get; set; }
+        public bool ForceHttps { get; set; }
+        public int SessionTimeoutMinutes { get; set; }
+        public string PasswordPolicy { get; set; } = "";
+        public int MaxLoginAttempts { get; set; }
+    }
+
+    private class NotificationSettings
+    {
+        public bool EnableNotifications { get; set; }
+        public bool EnableSound { get; set; }
+        public bool EnableEmailNotifications { get; set; }
+        public string SmtpServer { get; set; } = "";
+        public int SmtpPort { get; set; }
+        public string SmtpSecurity { get; set; } = "";
+        public string SmtpUsername { get; set; } = "";
+        public string SmtpPassword { get; set; } = "";
+    }
+
+    private class BackupSettings
+    {
+        public bool EnableAutoBackup { get; set; }
+        public string BackupFrequency { get; set; } = "";
+        public string BackupPath { get; set; } = "";
+        public int RetentionDays { get; set; }
+    }
+
+    private class BackupRecord
+    {
+        public string FileName { get; set; } = "";
+        public DateTime Date { get; set; }
+        public long Size { get; set; }
+    }
+}

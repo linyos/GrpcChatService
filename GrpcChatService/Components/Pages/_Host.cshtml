@@ -5,18 +5,80 @@
     Layout = null;
 }
 
-@* <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Chat Admin11</title>
+    <title>gRPC 聊天管理系統</title>
     <base href="~/" />
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <!-- Google Fonts - Noto Sans TC -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- 應用程式樣式表 -->
     <link href="css/app.css" rel="stylesheet" />
     <link href="GrpcChatService.styles.css" rel="stylesheet" />
+    
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --success-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --info-color: #9b59b6;
+            --light-color: #ecf0f1;
+            --dark-color: #34495e;
+        }
+        
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f8f9fa;
+        }
+        
+        #blazor-error-ui {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            padding: 1rem;
+            z-index: 1000;
+            background-color: #fff3cd;
+            color: #856404;
+            box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+            border-top-left-radius: 4px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+    </style>
 </head>
 <body>
     <component type="typeof(GrpcChatService.Components.App)" render-mode="ServerPrerendered" />
+    
+    <div id="blazor-error-ui">
+        <div class="container">
+            <div class="alert alert-warning d-flex align-items-center" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <div>
+                    發生了未處理的錯誤
+                    <a href="" class="alert-link reload ms-2">重新載入</a>
+                    <button class="btn-close float-end dismiss" aria-label="關閉"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Blazor Script -->
     <script src="_framework/blazor.server.js"></script>
 </body>
-</html> *@
+</html>

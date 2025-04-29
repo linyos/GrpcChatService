@@ -1,0 +1,375 @@
+@page "/logs"
+
+<PageTitle>系統日誌 - gRPC 聊天管理系統</PageTitle>
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h1 class="fw-bold">系統日誌</h1>
+                <div class="d-flex gap-2">
+                    <div class="input-group">
+                        <input type="date" class="form-control" @bind="startDate" />
+                        <span class="input-group-text">至</span>
+                        <input type="date" class="form-control" @bind="endDate" />
+                        <button class="btn btn-outline-secondary" @onclick="FilterLogs">
+                            <i class="bi bi-funnel"></i>
+                        </button>
+                    </div>
+                    <button class="btn btn-outline-primary" @onclick="RefreshLogs">
+                        <i class="bi bi-arrow-repeat me-1"></i>重新整理
+                    </button>
+                    <button class="btn btn-outline-secondary" @onclick="ExportLogs">
+                        <i class="bi bi-download me-1"></i>匯出
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12 col-md-6 col-lg-3 mb-3">
+            <div class="card border-0 h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-circle p-3 me-3" style="background-color: rgba(52, 152, 219, 0.1);">
+                        <i class="bi bi-info-circle text-info fs-4"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1">資訊日誌</h6>
+                        <h3 class="fw-bold">@logCounts["Info"]</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-3 mb-3">
+            <div class="card border-0 h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-circle p-3 me-3" style="background-color: rgba(243, 156, 18, 0.1);">
+                        <i class="bi bi-exclamation-triangle text-warning fs-4"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1">警告日誌</h6>
+                        <h3 class="fw-bold">@logCounts["Warning"]</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-3 mb-3">
+            <div class="card border-0 h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-circle p-3 me-3" style="background-color: rgba(231, 76, 60, 0.1);">
+                        <i class="bi bi-exclamation-circle text-danger fs-4"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1">錯誤日誌</h6>
+                        <h3 class="fw-bold">@logCounts["Error"]</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-3 mb-3">
+            <div class="card border-0 h-100">
+                <div class="card-body d-flex align-items-center">
+                    <div class="rounded-circle p-3 me-3" style="background-color: rgba(155, 89, 182, 0.1);">
+                        <i class="bi bi-database text-purple fs-4"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-1">總日誌數</h6>
+                        <h3 class="fw-bold">@logs.Count</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0">
+                <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                    <ul class="nav nav-tabs card-header-tabs">
+                        <li class="nav-item">
+                            <button class="nav-link @(currentTab == "all" ? "active" : "")" @onclick="@(() => ChangeTab("all"))">全部</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link @(currentTab == "Info" ? "active" : "")" @onclick="@(() => ChangeTab("Info"))">資訊</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link @(currentTab == "Warning" ? "active" : "")" @onclick="@(() => ChangeTab("Warning"))">警告</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link @(currentTab == "Error" ? "active" : "")" @onclick="@(() => ChangeTab("Error"))">錯誤</button>
+                        </li>
+                    </ul>
+                    <div class="input-group" style="width: 250px;">
+                        <input type="text" class="form-control" placeholder="搜尋日誌..." @bind="searchQuery" @bind:event="oninput" />
+                        <button class="btn btn-outline-secondary" type="button">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 50px;">#</th>
+                                    <th style="width: 180px;">時間</th>
+                                    <th style="width: 100px;">等級</th>
+                                    <th>訊息</th>
+                                    <th style="width: 150px;">來源</th>
+                                    <th style="width: 100px;">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var log in FilteredLogs)
+                                {
+                                    <tr class="@GetRowClass(log.Level)">
+                                        <td>@log.Id</td>
+                                        <td>@log.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                        <td>
+                                            <span class="badge bg-@GetLevelBadgeClass(log.Level)">@log.Level</span>
+                                        </td>
+                                        <td>@log.Message</td>
+                                        <td>@log.Source</td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <button class="btn btn-sm btn-outline-primary" @onclick="@(() => ViewLogDetail(log))">
+                                                    <i class="bi bi-info-circle"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-danger" @onclick="@(() => DeleteLog(log))">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card-footer bg-transparent">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            顯示 <b>@FilteredLogs.Count()</b> 筆，共 <b>@logs.Count</b> 筆
+                        </div>
+                        <nav>
+                            <ul class="pagination pagination-sm mb-0">
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#"><i class="bi bi-chevron-left"></i></a>
+                                </li>
+                                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#"><i class="bi bi-chevron-right"></i></a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string searchQuery = "";
+    private string currentTab = "all";
+    private DateTime startDate = DateTime.Now.AddDays(-7);
+    private DateTime endDate = DateTime.Now;
+
+    // 模擬日誌數據
+    private List<LogEntry> logs = new List<LogEntry>();
+    private Dictionary<string, int> logCounts = new Dictionary<string, int>
+    {
+        { "Info", 0 },
+        { "Warning", 0 },
+        { "Error", 0 }
+    };
+
+    protected override void OnInitialized()
+    {
+        // 生成模擬日誌數據
+        GenerateLogData();
+
+        // 計算各類型日誌數量
+        foreach (var log in logs)
+        {
+            if (logCounts.ContainsKey(log.Level))
+            {
+                logCounts[log.Level]++;
+            }
+        }
+    }
+
+    private void GenerateLogData()
+    {
+        var random = new Random();
+        var sources = new[] { "系統", "資料庫", "網路", "使用者操作", "API", "安全" };
+        var levels = new[] { "Info", "Warning", "Error" };
+        var infoMessages = new[]
+        {
+            "系統啟動成功",
+            "用戶登入系統",
+            "用戶登出系統",
+            "資料庫連接正常",
+            "資料備份完成",
+            "配置更新成功",
+            "新用戶註冊"
+        };
+        var warningMessages = new[]
+        {
+            "系統負載過高",
+            "記憶體使用率超過 75%",
+            "API 請求響應時間超過 2 秒",
+            "使用者嘗試訪問未授權資源",
+            "資料庫查詢執行超時",
+            "服務節點無法訪問"
+        };
+        var errorMessages = new[]
+        {
+            "資料庫連接失敗",
+            "API 呼叫異常",
+            "用戶認證失敗",
+            "檔案系統錯誤",
+            "網路連接中斷",
+            "服務無法啟動"
+        };
+
+        logs = new List<LogEntry>();
+        for (int i = 1; i <= 100; i++)
+        {
+            var levelIdx = random.Next(100) < 70 ? 0 : (random.Next(100) < 70 ? 1 : 2);
+            var level = levels[levelIdx];
+            
+            string message;
+            switch (level)
+            {
+                case "Info":
+                    message = infoMessages[random.Next(infoMessages.Length)];
+                    break;
+                case "Warning":
+                    message = warningMessages[random.Next(warningMessages.Length)];
+                    break;
+                case "Error":
+                    message = errorMessages[random.Next(errorMessages.Length)];
+                    break;
+                default:
+                    message = "未知日誌";
+                    break;
+            }
+
+            var source = sources[random.Next(sources.Length)];
+            var daysAgo = random.Next(10);
+            var hoursAgo = random.Next(24);
+            var minutesAgo = random.Next(60);
+            
+            logs.Add(new LogEntry
+            {
+                Id = i,
+                Timestamp = DateTime.Now.AddDays(-daysAgo).AddHours(-hoursAgo).AddMinutes(-minutesAgo),
+                Level = level,
+                Message = message,
+                Source = source,
+                Details = $"{message} - 詳細訊息：{Guid.NewGuid()}"
+            });
+        }
+
+        // 依時間排序
+        logs = logs.OrderByDescending(l => l.Timestamp).ToList();
+    }
+
+    private IEnumerable<LogEntry> FilteredLogs
+    {
+        get
+        {
+            var filteredLogs = logs.AsEnumerable();
+            
+            // 根據Tab過濾
+            if (currentTab != "all")
+            {
+                filteredLogs = filteredLogs.Where(l => l.Level == currentTab);
+            }
+            
+            // 根據日期範圍過濾
+            filteredLogs = filteredLogs.Where(l => l.Timestamp.Date >= startDate.Date && l.Timestamp.Date <= endDate.Date);
+            
+            // 根據搜尋查詢過濾
+            if (!string.IsNullOrWhiteSpace(searchQuery))
+            {
+                filteredLogs = filteredLogs.Where(l => 
+                    l.Message.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) || 
+                    l.Source.Contains(searchQuery, StringComparison.OrdinalIgnoreCase));
+            }
+            
+            return filteredLogs;
+        }
+    }
+
+    private void ChangeTab(string tab)
+    {
+        currentTab = tab;
+    }
+
+    private string GetLevelBadgeClass(string level)
+    {
+        return level switch
+        {
+            "Info" => "info",
+            "Warning" => "warning",
+            "Error" => "danger",
+            _ => "secondary"
+        };
+    }
+
+    private string GetRowClass(string level)
+    {
+        return level switch
+        {
+            "Error" => "table-danger",
+            "Warning" => "table-warning",
+            _ => ""
+        };
+    }
+
+    private void FilterLogs()
+    {
+        // 套用日期過濾
+    }
+
+    private void RefreshLogs()
+    {
+        // 重新載入日誌
+        GenerateLogData();
+    }
+
+    private void ExportLogs()
+    {
+        // 匯出日誌
+    }
+
+    private void ViewLogDetail(LogEntry log)
+    {
+        // 查看日誌詳情
+    }
+
+    private void DeleteLog(LogEntry log)
+    {
+        // 刪除日誌
+        logCounts[log.Level]--;
+        logs.Remove(log);
+    }
+
+    // 日誌項目類
+    private class LogEntry
+    {
+        public int Id { get; set; }
+        public DateTime Timestamp { get; set; }
+        public string Level { get; set; } = "";
+        public string Message { get; set; } = "";
+        public string Source { get; set; } = "";
+        public string Details { get; set; } = "";
+    }
+}

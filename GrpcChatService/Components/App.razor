@@ -12,27 +12,21 @@
     <NotFound>
         <PageTitle>找不到頁面</PageTitle>
         <LayoutView Layout="@typeof(MainLayout)">
-            <div class="not-found-container">
-                <div class="not-found-content">
-                    <div class="not-found-icon">
-                        <i class="bi bi-exclamation-circle-fill"></i>
+            <div class="container py-5">
+                <div class="row justify-content-center">
+                    <div class="col-md-8 text-center">
+                        <div class="mb-4">
+                            <i class="bi bi-exclamation-triangle-fill text-warning" style="font-size: 4rem;"></i>
+                        </div>
+                        <h1 class="display-1 fw-bold">404</h1>
+                        <h2 class="mb-3">頁面不存在</h2>
+                        <p class="lead mb-4">抱歉，您請求的頁面不存在或已被移除。</p>
+                        <a href="/" class="btn btn-primary px-4">
+                            <i class="bi bi-house-door me-2"></i>返回首頁
+                        </a>
                     </div>
-                    <h1>404</h1>
-                    <h2>頁面不存在</h2>
-                    <p>抱歉，您請求的頁面不存在或已被移除。</p>
-                    <a href="/" class="btn btn-primary">
-                        <i class="bi bi-house-door"></i> 返回首頁
-                    </a>
                 </div>
             </div>
         </LayoutView>
     </NotFound>
 </Router>
-
-<div id="blazor-error-ui" data-nosnippet>
-    發生了未處理的錯誤
-    <a href="." class="reload">重新整理</a>
-    <button class="dismiss">
-        <i class="bi bi-x"></i>
-    </button>
-</div>

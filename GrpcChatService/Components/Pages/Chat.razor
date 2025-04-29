@@ -1,0 +1,516 @@
+@page "/chat"
+@using System.Collections.Generic
+@using System.Threading.Tasks
+@inject NavigationManager Navigation
+
+<PageTitle>聊天監控 - gRPC 聊天管理系統</PageTitle>
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h1 class="fw-bold">聊天監控</h1>
+                <div class="d-flex gap-2">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-funnel me-1"></i> 篩選
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#">所有聊天</a></li>
+                            <li><a class="dropdown-item" href="#">活躍聊天</a></li>
+                            <li><a class="dropdown-item" href="#">已結束聊天</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#">依用戶篩選</a></li>
+                        </ul>
+                    </div>
+                    <button class="btn btn-primary" @onclick="CreateNewChat">
+                        <i class="bi bi-plus-lg me-1"></i> 新建聊天
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 h-100">
+                <div class="card-header bg-transparent">
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" class="form-control border-start-0" placeholder="搜尋聊天..." @bind="searchQuery" @bind:event="oninput" />
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush chat-list">
+                        @foreach (var chat in FilteredChats)
+                        {
+                            <button type="button" 
+                                    class="list-group-item list-group-item-action border-0 py-3 @(selectedChatId == chat.Id ? "active" : "")" 
+                                    @onclick="() => SelectChat(chat.Id)">
+                                <div class="d-flex align-items-center">
+                                    <div class="position-relative me-3">
+                                        <img src="@chat.AvatarUrl" class="rounded-circle" width="48" height="48" alt="@chat.UserName" />
+                                        <span class="position-absolute bottom-0 end-0 badge rounded-pill @GetStatusBadgeClass(chat.Status)">
+                                            <span class="visually-hidden">@chat.Status</span>
+                                        </span>
+                                    </div>
+                                    <div class="flex-grow-1 overflow-hidden">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h6 class="mb-0 text-truncate">@chat.UserName</h6>
+                                            <small class="text-muted ms-2">@FormatTime(chat.LastMessageTime)</small>
+                                        </div>
+                                        <p class="small mb-0 text-truncate">
+                                            @chat.LastMessage
+                                        </p>
+                                    </div>
+                                </div>
+                                @if (chat.UnreadCount > 0)
+                                {
+                                    <div class="ms-auto">
+                                        <span class="badge rounded-pill bg-primary">@chat.UnreadCount</span>
+                                    </div>
+                                }
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-8">
+            @if (selectedChatId != null)
+            {
+                var chat = Chats.FirstOrDefault(c => c.Id == selectedChatId);
+                if (chat != null)
+                {
+                    <div class="card border-0 h-100 d-flex flex-column">
+                        <div class="card-header bg-transparent py-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <div class="position-relative me-3">
+                                        <img src="@chat.AvatarUrl" class="rounded-circle" width="42" height="42" alt="@chat.UserName" />
+                                        <span class="position-absolute bottom-0 end-0 badge rounded-pill @GetStatusBadgeClass(chat.Status)">
+                                            <span class="visually-hidden">@chat.Status</span>
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <h5 class="mb-0">@chat.UserName</h5>
+                                        <small class="text-muted">@chat.Email</small>
+                                    </div>
+                                </div>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-icon" type="button" data-bs-toggle="dropdown">
+                                        <i class="bi bi-three-dots-vertical"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li><a class="dropdown-item" href="#"><i class="bi bi-info-circle me-2"></i>查看用戶資料</a></li>
+                                        <li><a class="dropdown-item" href="#"><i class="bi bi-archive me-2"></i>封存對話</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-x-circle me-2"></i>結束對話</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-body chat-messages p-4" style="overflow-y: auto; height: 400px;">
+                            @foreach (var message in chat.Messages)
+                            {
+                                <div class="d-flex mb-3 @(message.IsFromUser ? "justify-content-start" : "justify-content-end")">
+                                    @if (message.IsFromUser)
+                                    {
+                                        <div class="me-2">
+                                            <img src="@chat.AvatarUrl" class="rounded-circle" width="36" height="36" alt="@chat.UserName" />
+                                        </div>
+                                    }
+                                    <div class="message-bubble @(message.IsFromUser ? "user-message" : "admin-message")">
+                                        <div class="message-content">
+                                            @message.Content
+                                        </div>
+                                        <div class="message-time">
+                                            <small class="text-muted">@message.Timestamp.ToString("HH:mm")</small>
+                                            @if (!message.IsFromUser)
+                                            {
+                                                <i class="bi bi-check2-all ms-1" style="color: #3498db;"></i>
+                                            }
+                                        </div>
+                                    </div>
+                                    @if (!message.IsFromUser)
+                                    {
+                                        <div class="ms-2">
+                                            <img src="https://via.placeholder.com/36?text=管理員" class="rounded-circle" width="36" height="36" alt="管理員" />
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+
+                        <div class="card-footer bg-transparent p-3 border-top">
+                            <div class="d-flex">
+                                <div class="btn-group me-2">
+                                    <button class="btn btn-outline-secondary">
+                                        <i class="bi bi-emoji-smile"></i>
+                                    </button>
+                                    <button class="btn btn-outline-secondary">
+                                        <i class="bi bi-paperclip"></i>
+                                    </button>
+                                </div>
+                                <input type="text" class="form-control me-2" placeholder="輸入訊息..." @bind="newMessage" @onkeydown="@OnKeyDown" />
+                                <button class="btn btn-primary" @onclick="SendMessage">
+                                    <i class="bi bi-send"></i>
+                                </button>
+                            </div>
+                            <div class="d-flex justify-content-between mt-2">
+                                <div>
+                                    <button class="btn btn-sm btn-link text-muted">
+                                        <i class="bi bi-reply"></i> 快速回覆
+                                    </button>
+                                </div>
+                                <div>
+                                    <span class="text-muted small"><i class="bi bi-keyboard"></i> 正在輸入...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="card border-0 h-100 d-flex align-items-center justify-content-center">
+                    <div class="text-center p-5">
+                        <i class="bi bi-chat-dots text-muted" style="font-size: 5rem;"></i>
+                        <h3 class="mt-4">請選擇一個聊天開始</h3>
+                        <p class="text-muted">或者建立一個新的聊天</p>
+                        <button class="btn btn-primary" @onclick="CreateNewChat">
+                            <i class="bi bi-plus-lg me-1"></i> 新建聊天
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .chat-list {
+        max-height: 600px;
+        overflow-y: auto;
+    }
+    .chat-list .list-group-item.active {
+        background-color: rgba(52, 152, 219, 0.1);
+        color: inherit;
+        border-color: rgba(0,0,0,0.125);
+    }
+    .message-bubble {
+        max-width: 70%;
+        padding: 10px 15px;
+        border-radius: 15px;
+        position: relative;
+        margin-bottom: 5px;
+    }
+    .user-message {
+        background-color: #f1f0f0;
+    }
+    .admin-message {
+        background-color: #e1f5fe;
+    }
+    .message-time {
+        display: flex;
+        justify-content: flex-end;
+        font-size: 0.75rem;
+        margin-top: 5px;
+    }
+    .btn-icon {
+        border: none;
+        background: transparent;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        color: #6c757d;
+    }
+    .btn-icon:hover {
+        background-color: rgba(108, 117, 125, 0.1);
+    }
+</style>
+
+@code {
+    private string? selectedChatId;
+    private string searchQuery = "";
+    private string newMessage = "";
+
+    // 模擬聊天資料
+    private List<ChatModel> Chats { get; set; } = new List<ChatModel>
+    {
+        new ChatModel
+        {
+            Id = "chat1",
+            UserName = "張小明",
+            Email = "zhang@example.com",
+            AvatarUrl = "https://randomuser.me/api/portraits/men/32.jpg",
+            Status = "online",
+            LastMessage = "好的，我了解了，謝謝您的解釋",
+            LastMessageTime = DateTime.Now.AddMinutes(-5),
+            UnreadCount = 0,
+            Messages = new List<MessageModel>
+            {
+                new MessageModel
+                {
+                    Id = "msg1",
+                    Content = "您好，我有一個關於訂單的問題需要諮詢",
+                    Timestamp = DateTime.Now.AddHours(-1).AddMinutes(-15),
+                    IsFromUser = true
+                },
+                new MessageModel
+                {
+                    Id = "msg2",
+                    Content = "您好，很高興為您服務，請問有什麼可以幫到您？",
+                    Timestamp = DateTime.Now.AddHours(-1).AddMinutes(-14),
+                    IsFromUser = false
+                },
+                new MessageModel
+                {
+                    Id = "msg3",
+                    Content = "我昨天購買的商品還沒有收到發貨通知，訂單號是 #12345",
+                    Timestamp = DateTime.Now.AddHours(-1).AddMinutes(-12),
+                    IsFromUser = true
+                },
+                new MessageModel
+                {
+                    Id = "msg4",
+                    Content = "讓我幫您查詢一下，請稍等...",
+                    Timestamp = DateTime.Now.AddHours(-1).AddMinutes(-10),
+                    IsFromUser = false
+                },
+                new MessageModel
+                {
+                    Id = "msg5",
+                    Content = "我已經查詢到您的訂單，系統顯示已經發貨，預計明天送達。可能是系統通知延遲，我已幫您重新發送了一封確認郵件。",
+                    Timestamp = DateTime.Now.AddHours(-1).AddMinutes(-8),
+                    IsFromUser = false
+                },
+                new MessageModel
+                {
+                    Id = "msg6",
+                    Content = "好的，我了解了，謝謝您的解釋",
+                    Timestamp = DateTime.Now.AddMinutes(-5),
+                    IsFromUser = true
+                }
+            }
+        },
+        new ChatModel
+        {
+            Id = "chat2",
+            UserName = "王小花",
+            Email = "wang@example.com",
+            AvatarUrl = "https://randomuser.me/api/portraits/women/44.jpg",
+            Status = "offline",
+            LastMessage = "請問有優惠券可以使用嗎？",
+            LastMessageTime = DateTime.Now.AddHours(-2),
+            UnreadCount = 3,
+            Messages = new List<MessageModel>
+            {
+                new MessageModel
+                {
+                    Id = "msg1",
+                    Content = "您好，請問您們的網站有提供折扣碼嗎？",
+                    Timestamp = DateTime.Now.AddHours(-3),
+                    IsFromUser = true
+                },
+                new MessageModel
+                {
+                    Id = "msg2",
+                    Content = "您好，目前我們有針對新用戶提供優惠碼 NEWUSER10 可獲得10%折扣",
+                    Timestamp = DateTime.Now.AddHours(-2).AddMinutes(-50),
+                    IsFromUser = false
+                },
+                new MessageModel
+                {
+                    Id = "msg3",
+                    Content = "請問有優惠券可以使用嗎？",
+                    Timestamp = DateTime.Now.AddHours(-2),
+                    IsFromUser = true
+                }
+            }
+        },
+        new ChatModel
+        {
+            Id = "chat3",
+            UserName = "李大雄",
+            Email = "li@example.com",
+            AvatarUrl = "https://randomuser.me/api/portraits/men/62.jpg",
+            Status = "away",
+            LastMessage = "謝謝，幫我取消訂單",
+            LastMessageTime = DateTime.Now.AddHours(-5),
+            UnreadCount = 0,
+            Messages = new List<MessageModel>
+            {
+                new MessageModel
+                {
+                    Id = "msg1",
+                    Content = "我想取消我剛才下的訂單",
+                    Timestamp = DateTime.Now.AddHours(-6),
+                    IsFromUser = true
+                },
+                new MessageModel
+                {
+                    Id = "msg2",
+                    Content = "您好，請提供您的訂單號，我們會協助您處理",
+                    Timestamp = DateTime.Now.AddHours(-5).AddMinutes(-30),
+                    IsFromUser = false
+                },
+                new MessageModel
+                {
+                    Id = "msg3",
+                    Content = "訂單號是 #54321",
+                    Timestamp = DateTime.Now.AddHours(-5).AddMinutes(-20),
+                    IsFromUser = true
+                },
+                new MessageModel
+                {
+                    Id = "msg4",
+                    Content = "我已幫您取消訂單，退款將在3-5個工作日內退回原支付方式",
+                    Timestamp = DateTime.Now.AddHours(-5).AddMinutes(-10),
+                    IsFromUser = false
+                },
+                new MessageModel
+                {
+                    Id = "msg5",
+                    Content = "謝謝，幫我取消訂單",
+                    Timestamp = DateTime.Now.AddHours(-5),
+                    IsFromUser = true
+                }
+            }
+        }
+    };
+
+    private IEnumerable<ChatModel> FilteredChats => string.IsNullOrWhiteSpace(searchQuery)
+        ? Chats
+        : Chats.Where(c => c.UserName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) || 
+                           c.LastMessage.Contains(searchQuery, StringComparison.OrdinalIgnoreCase));
+
+    private void SelectChat(string chatId)
+    {
+        selectedChatId = chatId;
+        // 重置未讀消息計數
+        var chat = Chats.FirstOrDefault(c => c.Id == chatId);
+        if (chat != null)
+        {
+            chat.UnreadCount = 0;
+        }
+    }
+
+    private void CreateNewChat()
+    {
+        // 新增模擬聊天
+        var newChat = new ChatModel
+        {
+            Id = $"chat{Chats.Count + 1}",
+            UserName = "新用戶",
+            Email = "new@example.com",
+            AvatarUrl = "https://randomuser.me/api/portraits/lego/1.jpg",
+            Status = "online",
+            LastMessage = "您好，我需要協助",
+            LastMessageTime = DateTime.Now,
+            UnreadCount = 1,
+            Messages = new List<MessageModel>
+            {
+                new MessageModel
+                {
+                    Id = $"msg{Guid.NewGuid()}",
+                    Content = "您好，我需要協助",
+                    Timestamp = DateTime.Now,
+                    IsFromUser = true
+                }
+            }
+        };
+
+        Chats.Insert(0, newChat);
+        SelectChat(newChat.Id);
+    }
+
+    private string GetStatusBadgeClass(string status)
+    {
+        return status.ToLower() switch
+        {
+            "online" => "bg-success",
+            "offline" => "bg-secondary",
+            "away" => "bg-warning",
+            _ => "bg-secondary"
+        };
+    }
+
+    private string FormatTime(DateTime time)
+    {
+        if (time.Date == DateTime.Today)
+        {
+            return time.ToString("HH:mm");
+        }
+        else if (time.Date == DateTime.Today.AddDays(-1))
+        {
+            return "昨天";
+        }
+        else
+        {
+            return time.ToString("MM/dd");
+        }
+    }
+
+    private void SendMessage()
+    {
+        if (string.IsNullOrWhiteSpace(newMessage) || selectedChatId == null)
+            return;
+
+        var chat = Chats.FirstOrDefault(c => c.Id == selectedChatId);
+        if (chat != null)
+        {
+            // 添加管理員的回覆
+            chat.Messages.Add(new MessageModel
+            {
+                Id = $"msg{Guid.NewGuid()}",
+                Content = newMessage,
+                Timestamp = DateTime.Now,
+                IsFromUser = false
+            });
+
+            chat.LastMessage = newMessage;
+            chat.LastMessageTime = DateTime.Now;
+
+            newMessage = "";
+        }
+    }
+
+    private void OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(newMessage))
+        {
+            SendMessage();
+        }
+    }
+
+    // 聊天模型
+    private class ChatModel
+    {
+        public string Id { get; set; } = "";
+        public string UserName { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string AvatarUrl { get; set; } = "";
+        public string Status { get; set; } = "";
+        public string LastMessage { get; set; } = "";
+        public DateTime LastMessageTime { get; set; }
+        public int UnreadCount { get; set; }
+        public List<MessageModel> Messages { get; set; } = new List<MessageModel>();
+    }
+
+    // 訊息模型
+    private class MessageModel
+    {
+        public string Id { get; set; } = "";
+        public string Content { get; set; } = "";
+        public DateTime Timestamp { get; set; }
+        public bool IsFromUser { get; set; }
+    }
+}
