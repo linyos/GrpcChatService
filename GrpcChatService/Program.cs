@@ -16,6 +16,25 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSingleton<ChatState>();
 
+builder.WebHost.UseKestrel(options =>
+{
+    options.ListenLocalhost(5093, o =>
+    {
+        o.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http1AndHttp2;
+        // 不要加 o.UseHttps();
+    });
+});
+
+// builder.WebHost.UseKestrel(options =>
+// {
+//     options.ListenLocalhost(5093, o =>
+//     {
+//         o.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http1AndHttp2;
+        
+//     });
+// });
+
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
@@ -30,6 +49,9 @@ app.UseRouting();
 
 app.MapBlazorHub();
 app.MapGrpcService<GreeterService>();
+
+
+
 
 // 註解掉這一行，讓 gRPC 的說明消失
 // app.MapGet("/", () => "Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909");

@@ -1,13 +1,26 @@
 ﻿using Chat;
 using Grpc.Core;
 using Grpc.Net.Client;
+using System.Net;
+using System.Net.Http;
+
+AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 
 System.Console.WriteLine("請輸入使用者名稱:");
 string userName = Console.ReadLine() ?? "Anonymous";
 
 // 建立 gRPC 通道
 // 注意：這裡的 URL 需要與 gRPC 服務端一致
-var channel = GrpcChannel.ForAddress("https://localhost:7073");
+var handler = new SocketsHttpHandler
+{
+    EnableMultipleHttp2Connections = true
+};
+
+var channel = GrpcChannel.ForAddress("http://localhost:5093", new GrpcChannelOptions
+{
+    HttpHandler = handler
+});
+
 var client = new ChatService.ChatServiceClient(channel);
 
 using var chat = client.Chat();
